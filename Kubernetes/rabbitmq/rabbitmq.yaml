@@ -1,0 +1,62 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  labels:
+    app: rabbitmq
+  name: hello-world-rabbitmq
+  namespace: my-namespace
+spec:
+  replicas: 1
+  tls:
+    secretName: test-tls-1
+  image: rabbitmq:3.11.15
+  service:
+    type: NodePort
+  # override:
+  #   service:
+  #     spec:/home/gombka/.oh-my-zsh
+  #       ports:
+  #       - name: tcp-amqp
+  #         protocol: TCP
+  #         port: 5672
+  #         targetPort: 5672
+  #         nodePort: 35672
+  persistence:
+    storageClassName: microk8s-hostpath
+    storage: 10
+  resources:
+    requests:
+      cpu: 256m
+      memory: 1Gi
+    limits:
+      cpu: 256m
+      memory: 1Gi
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_management
+      - rabbitmq_peer_discovery_k8s
+    additionalConfig: |
+      cluster_formation.peer_discovery_backend = rabbit_peer_discovery_k8s
+      cluster_formation.k8s.host = kubernetes.default.svc.cluster.local
+      cluster_formation.k8s.address_type = hostname
+      vm_memory_high_watermark_paging_ratio = 0.85
+      cluster_formation.node_cleanup.interval = 10
+      cluster_partition_handling = autoheal
+      queue_master_locator = min-masters
+      loopback_users.guest = false
+      default_user = guest
+      default_pass = guest
+    advancedConfig: ""
+
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Queue
+metadata:
+  name: test # name of this custom resource; does not have to the same as the actual queue name
+  namespace: sypniewski-dev
+spec:
+  name: dupa-queue # name of the queue
+  rabbitmqClusterReference:
+    name: hello-world-rabbitmq
+    namespace: sypniewski-dev
+
