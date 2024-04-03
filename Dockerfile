@@ -1,9 +1,9 @@
-FROM mcr.microsoft.com/dotnet/runtime-deps:6.0-alpine AS base
+FROM mcr.microsoft.com/dotnet/aspnet:7.0-bullseye-slim-arm32v7 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
 
-FROM mcr.microsoft.com/dotnet/sdk:6.0-alpine AS build
+FROM mcr.microsoft.com/dotnet/sdk:7.0-bullseye-slim AS build
 WORKDIR /src
 COPY ["hellocontainers/hellocontainers.csproj", "hellocontainers/"]
 RUN dotnet restore "hellocontainers/hellocontainers.csproj"
@@ -12,10 +12,9 @@ WORKDIR "/src/hellocontainers"
 RUN dotnet build "hellocontainers.csproj" -c Release -o /app/build
 
 FROM build AS publish
-RUN dotnet publish "hellocontainers.csproj" -c Release -o /app/publish -r linux-musl-arm64 --self-contained
+RUN dotnet publish "hellocontainers.csproj" -c Release -o /app/publish
 
 FROM base AS final
 WORKDIR /app
-
 COPY --from=publish /app/publish .
-ENTRYPOINT ["./hellocontainers"]
+ENTRYPOINT ["dotnet", "hellocontainers.dll"]
